@@ -1,77 +1,62 @@
 import os
 import pandas as pd
-import connectdb
-from io import StringIO
-# Thư mục chứa các file Excel
-folder_path = 'C:\\Users\\Admin\\Desktop\\Selenium\\data'
+import psycopg2
+from connectdb import connect_to_database
 
-# Lấy danh sách tất cả các file trong thư mục và sắp xếp theo thời gian tạo (mới nhất đầu tiên)
+# Define the path to the folder containing the data
+folder_path = 'E:\\QuocViet\\Python\\tool_crawl_sapo\\data'
+
+# List and sort all files by modification time in descending order
 all_files = sorted(os.listdir(folder_path), key=lambda x: os.path.getmtime(os.path.join(folder_path, x)), reverse=True)
 
-# Lọc ra file Excel đầu tiên trong danh sách (file mới nhất)
+# Find the most recent Excel file
 excel_file = next((file for file in all_files if file.endswith('.xlsx')), None)
-
+conn = connect_to_database()
 if excel_file:
-    # Đường dẫn đến file Excel mới nhất
     excel_file_path = os.path.join(folder_path, excel_file)
-    
-    # In ra tên của file Excel mới nhất
-    print("File Excel gần nhất:", excel_file)
-    
-    # Kiểm tra đường dẫn của file Excel
-    print("Đường dẫn đến file Excel:", excel_file_path)
-    print("Đường dẫn tồn tại:", os.path.exists(excel_file_path))
-    
-    # Sử dụng pandas để đọc file Excel
+    print(f"Most recent Excel file: {excel_file}")
+    print(f"Path to the Excel file: {excel_file_path}")
+    print(f"Path exists: {os.path.exists(excel_file_path)}")
+
     try:
-        df = pd.read_excel(excel_file_path, header=2, usecols='A:AO')
-        df['Số lượng'] = pd.to_numeric(df['Số lượng'], errors='coerce').fillna(0).astype(int)
-        df['Ngày hoàn thành'] = pd.to_datetime(df['Ngày hoàn thành'], format='%d/%m/%Y %H:%M:%S')
-        df_clear = df.loc[:, ['Mã ĐH', 'Ngày hoàn thành', 'Mã sản phẩm', 'Tên sản phẩm', 'Số lượng', 'Đơn vị tính', 'Đơn giá', 'CK tổng đơn hàng']]
-        df_new = df_clear.rename(columns={
-            'Mã ĐH': 'ma_dh',
-            'Ngày hoàn thành': 'ngay_hoan_thanh',
-            'Mã sản phẩm': 'ma_san_pham',
-            'Tên sản phẩm': 'ten_san_pham',
-            'Số lượng': 'so_luong',
-            'Đơn vị tính': 'don_vi_tinh',
-            'Đơn giá': 'don_gia',
-            'CK tổng đơn hàng': 'ck_tong_don_hang'
-        }).iloc[1:]
-        print(df_new.info)
-        df_dress = df_new[df_new['ten_san_pham'].str.contains('Đầm', na=False)]
+        df = pd.read_excel(excel_file_path, header=30)
+        df.dropna(how='all', inplace=True)
+        df['Ngày chứng từ'] = pd.to_datetime(df['Ngày chứng từ'], format='%d/%m/%Y %H:%M:%S')
+        df['Giờ'] = df['Ngày chứng từ'].dt.hour
 
-        # In ra DataFrame chứa các dòng có 'ten_san_pham' chứa chuỗi "Đầm"
-        print(df_dress)
-        # Kết nối đến cơ sở dữ liệu PostgreSQL
-        # conn = connectdb.connect_to_database()
-        
-        # if conn is not None:
-        #     # Tạo một chuỗi kết nối I/O để ghi dữ liệu DataFrame vào database
-        #     output = StringIO()
-        #     df_new.to_csv(output, sep='\t', header=False, index=False)
-        #     output.seek(0)
-            
-        #     # Tạo một cursor để thực hiện các câu lệnh SQL
-        #     cursor = conn.cursor()
-            
-        #     # Copy dữ liệu từ chuỗi kết nối I/O vào table "oders" trong cơ sở dữ liệu
-        #     cursor.copy_from(output, 'orders', null='', columns=df_new.columns)
-            
-        #     # Commit các thay đổi vào cơ sở dữ liệu
-        #     conn.commit()
-            
-        #     # Đóng cursor và kết nối
-        #     cursor.close()
-        #     conn.close()
-            
-        #     print("Dữ liệu đã được lưu vào cơ sở dữ liệu thành công!")
-        # else:
-        #     print("Không thể kết nối đến cơ sở dữ liệu.")
+        # Corrected grouping for daily and hourly revenue
+        daily_revenue = df.groupby(df['Ngày chứng từ'].dt.date)['Số tiền thanh toán'].sum().reset_index(name='total_sales')
+        hourly_revenue = df.groupby([df['Ngày chứng từ'].dt.date, 'Giờ'])['Số tiền thanh toán'].sum().reset_index(name='total_sales')
+
+        if conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS daily_sales_report (
+                    date DATE,
+                    total_sales FLOAT
+                );
+            ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS hourly_sales_report (
+                    date DATE,
+                    hour INT,
+                    total_sales FLOAT
+                );
+            ''')
+            conn.commit()
+
+            # Inserting daily revenue
+            for _, row in daily_revenue.iterrows():
+                cursor.execute('INSERT INTO daily_sales_report (date, total_sales) VALUES (%s, %s)', (row['Ngày chứng từ'], row['total_sales']))
+
+            # Inserting hourly revenue
+            for _, row in hourly_revenue.iterrows():
+                cursor.execute('INSERT INTO hourly_sales_report (date, hour, total_sales) VALUES (%s, %s, %s)', (row['Ngày chứng từ'], row['Giờ'], row['total_sales']))
+            conn.commit()
+            cursor.close()
+        conn.close()
+        print("Data has been successfully inserted into the database.")
     except Exception as e:
-        print("Lỗi khi đọc file Excel:", e)
+        print("Error reading the Excel file or inserting data into the database:", e)
 else:
-    print("Không tìm thấy file Excel trong thư mục.")
-
-
-
+    print("No Excel file found in the directory.")
