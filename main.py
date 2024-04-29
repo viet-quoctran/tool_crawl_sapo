@@ -21,7 +21,7 @@ def click_safe(driver, xpath):
         print(f"Error clicking element with xpath {xpath}: {e}")
 
 # Thư mục tải về
-download_dir = 'C:\\Users\\Admin\\Desktop\\Selenium\\data'
+download_dir = 'C:\\Users\\\Administrator\\Desktop\\\tool_crawl_sapo\\data'
 
 # Khởi tạo Chrome WebDriver
 chrome_options = webdriver.ChromeOptions()
