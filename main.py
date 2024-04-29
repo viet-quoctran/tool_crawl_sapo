@@ -11,6 +11,7 @@ import time
 python_files = ["clear_data.py"]
 def click_safe(driver, xpath):
     try:
+        print(123)
         element = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, xpath)))
         element.click()
     except (StaleElementReferenceException, TimeoutException) as e:
