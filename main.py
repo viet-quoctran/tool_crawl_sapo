@@ -6,7 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 import time
-# Danh sách các file Python bạn muốn chạy
+print(123)
 python_files = ["clear_data.py"]
 def click_safe(driver, xpath):
     try:
