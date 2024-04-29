@@ -42,7 +42,7 @@ chrome_options.add_experimental_option('prefs', prefs)
 
 # Setup Chrome WebDriver
 print("Initializing Chrome WebDriver with specified options.")
-service = Service(executable_path=ChromeDriverManager().install())
+service = Service(executable_path=''/path/to/chromedriver'')
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
 # Login process
