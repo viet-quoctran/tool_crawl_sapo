@@ -5,6 +5,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
+from selenium.webdriver.chrome.options import Options
+
 import time
 
 python_files = ["clear_data.py"]
@@ -20,16 +22,23 @@ def click_safe(driver, xpath):
     except Exception as e:
         print(f"Error clicking element with xpath {xpath}: {e}")
 
-# Thư mục tải về
-download_dir = '\\root\\tool_crawl_sapo\\data'
-
-# Khởi tạo Chrome WebDriver
 chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument("--headless") 
+chrome_options.add_argument("--no-sandbox")  
+chrome_options.add_argument("--disable-gpu")  
+chrome_options.add_argument("--disable-dev-shm-usage")  
+chrome_options.add_argument("--window-size=1920,1080")  
+
+download_dir = '/root/tool_crawl_sapo/data'
+
 prefs = {'download.default_directory': download_dir}
 chrome_options.add_experimental_option('prefs', prefs)
-driver = webdriver.Chrome(options=chrome_options)
+
 print("Initializing Chrome WebDriver with specified options.")
-# Chờ cho tải về hoàn tất
+
+service = Service(executable_path=ChromeDriverManager().install())
+driver = webdriver.Chrome(service=service, options=chrome_options)
+
 def wait_for_download(dir_path):
     while not any(filename.endswith('.xlsx') for filename in os.listdir(dir_path)):
         time.sleep(1)
