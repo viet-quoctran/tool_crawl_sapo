@@ -34,7 +34,7 @@ chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--window-size=1920,1080")
-
+chrome_options.binary_location = '/usr/bin/google-chrome
 # Set download directory
 download_dir = '/root/tool_crawl_sapo/data'
 prefs = {'download.default_directory': download_dir}
@@ -42,7 +42,7 @@ chrome_options.add_experimental_option('prefs', prefs)
 
 # Setup Chrome WebDriver
 print("Initializing Chrome WebDriver with specified options.")
-service = Service(executable_path='/path/to/chromedriver')
+service = Service(executable_path=ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
 # Login process
