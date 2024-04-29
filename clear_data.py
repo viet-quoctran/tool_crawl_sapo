@@ -4,7 +4,7 @@ import psycopg2
 from connectdb import connect_to_database
 
 # Define the path to the folder containing the data
-folder_path = 'E:\\QuocViet\\Python\\tool_crawl_sapo\\data'
+folder_path = '\\root\\tool_crawl_sapo\\data'
 
 # List and sort all files by modification time in descending order
 all_files = sorted(os.listdir(folder_path), key=lambda x: os.path.getmtime(os.path.join(folder_path, x)), reverse=True)
