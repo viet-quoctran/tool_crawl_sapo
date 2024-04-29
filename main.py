@@ -27,13 +27,13 @@ chrome_options = webdriver.ChromeOptions()
 prefs = {'download.default_directory': download_dir}
 chrome_options.add_experimental_option('prefs', prefs)
 driver = webdriver.Chrome(options=chrome_options)
-
+print("Initializing Chrome WebDriver with specified options.")
 # Chờ cho tải về hoàn tất
 def wait_for_download(dir_path):
     while not any(filename.endswith('.xlsx') for filename in os.listdir(dir_path)):
         time.sleep(1)
 
-# Thực hiện đăng nhập
+print("Opening Sapo login page.")
 wait = WebDriverWait(driver, 10)
 driver.get("https://accounts.sapo.vn/login")
 wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="username"]'))).send_keys('0764402536')
@@ -42,11 +42,11 @@ login_button = driver.find_element(By.XPATH, "//button[@type='submit' and text()
 login_button.click()
 wait.until(EC.url_contains("https://accounts.sapo.vn/sso/access-to-store"))
 
-# Truy cập trang đơn hàng
+print("Navigating to the orders page.")
 driver.get("https://tamtrinhshop.mysapogo.com/admin/orders")
 time.sleep(3)
 
-# Click các phần tử trên trang
+print("Starting to click elements on the page.")
 xpath_list = [
     '//*[@id="root"]/div[2]/div[2]/div[2]/div[3]/div[1]/div[2]/div[2]/div',
     '/html/body/div[1]/div[2]/div[2]/div[2]/div[3]/div[1]/div[2]/div[2]/div[2]/div/div/button[2]',
@@ -66,7 +66,7 @@ for xpath in xpath_list:
     click_safe(driver, xpath)
     time.sleep(3)  # Đợi 3 giây giữa các lần click
 
-# Chọn checkbox 'HẰNG'
+print("Selecting the 'HẰNG' checkbox.")
 try:
     wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[7]/div/div/div[1]/div[2]/input'))).send_keys('HẰNG')
     time.sleep(2)
@@ -76,11 +76,11 @@ try:
 except TimeoutException:
     print("Timeout occurred while waiting for element")
 
-# Click vào nút hoàn tất
+print("Clicking the completion button.")
 xpath_button = '/html/body/div[7]/div/button'
 click_safe(driver, xpath_button)
 
-# Tải về file Excel
+print("Attempting to download the Excel file.")
 try:
     element = wait.until(EC.visibility_of_element_located((By.XPATH, '/html/body/div[1]/div[2]/div[2]/div[2]/div/div[3]/div[1]/div[1]/table/tbody/tr[1]/td[7]/a')))
     element.click()
